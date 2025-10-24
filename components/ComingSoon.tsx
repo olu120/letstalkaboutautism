@@ -2,10 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-function targetDate(): Date {
-  const envDate = process.env.NEXT_PUBLIC_LAUNCH_DATE;
-  if (envDate) {
-    const d = new Date(envDate);
+type Social = { label: string; href: string };
+type Props = {
+  initialLaunchDate?: string; // ISO string from WP, fallback to env
+  socials?: Social[];         // socials from WP, fallback to defaults
+};
+
+function toDate(iso?: string): Date {
+  if (iso) {
+    const d = new Date(iso);
     if (!isNaN(d as any)) return d;
   }
   // fallback = 60 days from now
@@ -14,33 +19,65 @@ function targetDate(): Date {
   return d;
 }
 
-function useCountdown(to: Date) {
+function useCountdown(target: Date) {
   const [now, setNow] = useState(() => new Date());
-
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-
-  const diff = Math.max(0, to.getTime() - now.getTime());
+  const diff = Math.max(0, target.getTime() - now.getTime());
   const totalSeconds = Math.floor(diff / 1000);
   const days = Math.floor(totalSeconds / (60 * 60 * 24));
   const hours = Math.floor((totalSeconds % (60 * 60 * 24)) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-
   return { days, hours, minutes, seconds, done: diff <= 0 };
 }
 
-export default function ComingSoon() {
-  const to = useMemo(() => targetDate(), []);
-  const { days, hours, minutes, seconds, done } = useCountdown(to);
-
-  const socials = [
+export default function ComingSoon({
+  initialLaunchDate,
+  socials = [
     { label: "Instagram", href: "https://instagram.com" },
     { label: "LinkedIn", href: "https://linkedin.com" },
     { label: "WhatsApp", href: "https://wa.me/" },
-  ];
+  ],
+}: Props) {
+  const envFallback = process.env.NEXT_PUBLIC_LAUNCH_DATE;
+  const to = useMemo(() => toDate(initialLaunchDate || envFallback), [initialLaunchDate, envFallback]);
+  const { days, hours, minutes, seconds, done } = useCountdown(to);
+
+  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const endpoint = process.env.NEXT_PUBLIC_FORM_ENDPOINT;
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!endpoint) {
+      alert("Form endpoint not configured yet.");
+      return;
+    }
+    const form = e.currentTarget;
+    const data = new FormData(form);
+
+    // simple honeypot
+    if (data.get("website")) return;
+
+    setStatus("loading");
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: data,
+      });
+      if (res.ok) {
+        setStatus("ok");
+        form.reset();
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
+  }
 
   return (
     <main className="min-h-screen bg-white text-gray-900 flex items-center justify-center p-6">
@@ -70,10 +107,7 @@ export default function ComingSoon() {
               { label: "Minutes", value: minutes },
               { label: "Seconds", value: seconds },
             ].map((t) => (
-              <div
-                key={t.label}
-                className="rounded-2xl border p-4 md:p-6"
-              >
+              <div key={t.label} className="rounded-2xl border p-4 md:p-6">
                 <div className="text-3xl md:text-4xl font-bold tabular-nums">
                   {String(t.value).padStart(2, "0")}
                 </div>
@@ -85,13 +119,21 @@ export default function ComingSoon() {
           )}
         </div>
 
+        {/* newsletter form */}
         <form
           className="mt-10 flex flex-col sm:flex-row items-stretch gap-3 justify-center"
-          onSubmit={(e) => {
-            e.preventDefault();
-            alert("Thanks! We’ll keep you posted.");
-          }}
+          onSubmit={handleSubmit}
         >
+          {/* honeypot */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            className="hidden"
+            aria-hidden="true"
+          />
+
           <label htmlFor="email" className="sr-only">
             Email address
           </label>
@@ -102,20 +144,27 @@ export default function ComingSoon() {
             required
             placeholder="Your email address"
             className="w-full sm:w-80 rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-black"
+            disabled={status === "loading"}
           />
           <button
             type="submit"
-            className="rounded-xl border border-black bg-black px-5 py-3 font-medium text-white active:translate-y-px"
+            disabled={status === "loading"}
+            className="rounded-xl border border-black bg-black px-5 py-3 font-medium text-white active:translate-y-px disabled:opacity-60"
           >
-            Notify me
+            {status === "loading" ? "Submitting..." : "Notify me"}
           </button>
         </form>
+
+        <p className="mt-2 text-sm text-center">
+          {status === "ok" && "Thanks! Please check your inbox for a confirmation."}
+          {status === "error" && "Something went wrong. Please try again."}
+        </p>
 
         <nav
           aria-label="Social links"
           className="mt-8 flex items-center justify-center gap-5 text-sm text-gray-600"
         >
-          {socials.map((s) => (
+          {(socials || []).map((s) => (
             <a
               key={s.label}
               href={s.href}
