@@ -80,107 +80,109 @@ export default function ComingSoon({
   }
 
   return (
-    <main className="min-h-screen bg-white text-gray-900 flex items-center justify-center p-6">
-      <section className="w-full max-w-3xl text-center">
-        <div className="mx-auto mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl shadow-sm">
-          <img
-            src="/ComingSoon.jpg"
-            alt="Let’s Talk About Autism — Coming Soon"
-            className="h-full w-full object-cover"
-          />
-        </div>
+  <main className="min-h-screen bg-white text-gray-900 flex items-center justify-center p-6">
+    <section className="w-full max-w-3xl text-center">
+      <div className="mx-auto mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl shadow-sm">
+        <img
+          src="/ComingSoon.jpg"
+          alt="Let’s Talk About Autism — Coming Soon"
+          className="h-full w-full object-cover"
+        />
+      </div>
 
-        <h1 className="text-3xl md:text-5xl font-semibold leading-tight">
-          Let’s Talk About Autism
-        </h1>
-        <p className="mt-3 text-base md:text-lg text-gray-600">
-          We’re preparing resources, guidance, and community support.
-        </p>
+      <img src="/logo.png" alt="LTA logo" className="mx-auto w-16 h-16 mb-4" />
 
-        <div className="mt-8 grid grid-cols-4 gap-3 md:gap-4">
-          {done ? (
-            <span className="col-span-4 text-lg font-medium">We’re live!</span>
-          ) : (
-            [
-              { label: "Days", value: days },
-              { label: "Hours", value: hours },
-              { label: "Minutes", value: minutes },
-              { label: "Seconds", value: seconds },
-            ].map((t) => (
-              <div key={t.label} className="rounded-2xl border p-4 md:p-6">
-                <div className="text-3xl md:text-4xl font-bold tabular-nums">
-                  {String(t.value).padStart(2, "0")}
-                </div>
-                <div className="mt-1 text-xs uppercase tracking-wide text-gray-500">
-                  {t.label}
-                </div>
+      <h1 className="text-3xl md:text-5xl font-semibold leading-tight">
+        Let’s Talk About Autism
+      </h1>
+      <p className="mt-3 text-base md:text-lg text-muted">
+        We’re preparing resources, guidance, and community support.
+      </p>
+
+      <div className="mt-8 grid grid-cols-4 gap-3 md:gap-4">
+        {done ? (
+          <span className="col-span-4 text-lg font-medium">We’re live!</span>
+        ) : (
+          [
+            { label: "Days", value: days },
+            { label: "Hours", value: hours },
+            { label: "Minutes", value: minutes },
+            { label: "Seconds", value: seconds },
+          ].map((t) => (
+            <div key={t.label} className="card p-4 md:p-6">
+              <div className="text-3xl md:text-4xl font-bold tabular-nums">
+                {String(t.value).padStart(2, "0")}
               </div>
-            ))
-          )}
-        </div>
+              <div className="mt-1 text-xs uppercase tracking-wide text-gray-500">
+                {t.label}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
-        {/* newsletter form */}
-        <form
-          className="mt-10 flex flex-col sm:flex-row items-stretch gap-3 justify-center"
-          onSubmit={handleSubmit}
+      {/* newsletter form */}
+      <form
+        className="mt-10 flex flex-col sm:flex-row items-stretch gap-3 justify-center"
+        onSubmit={handleSubmit}
+      >
+        {/* honeypot */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          className="hidden"
+          aria-hidden="true"
+        />
+
+        <label htmlFor="email" className="sr-only">
+          Email address
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          placeholder="Your email address"
+          className="w-full sm:w-80 rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-brand"
+          disabled={status === "loading"}
+        />
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="btn btn-primary disabled:opacity-60"
         >
-          {/* honeypot */}
-          <input
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-            className="hidden"
-            aria-hidden="true"
-          />
+          {status === "loading" ? "Submitting..." : "Notify me"}
+        </button>
+      </form>
 
-          <label htmlFor="email" className="sr-only">
-            Email address
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            placeholder="Your email address"
-            className="w-full sm:w-80 rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-black"
-            disabled={status === "loading"}
-          />
-          <button
-            type="submit"
-            disabled={status === "loading"}
-            className="rounded-xl border border-black bg-black px-5 py-3 font-medium text-white active:translate-y-px disabled:opacity-60"
+      <p className="mt-2 text-sm text-center">
+        {status === "ok" && "Thanks! Please check your inbox for a confirmation."}
+        {status === "error" && "Something went wrong. Please try again."}
+      </p>
+
+      <nav
+        aria-label="Social links"
+        className="mt-8 flex items-center justify-center gap-5 text-sm text-muted"
+      >
+        {(socials || []).map((s) => (
+          <a
+            key={s.label}
+            href={s.href}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="underline-offset-4 hover:underline text-brand"
           >
-            {status === "loading" ? "Submitting..." : "Notify me"}
-          </button>
-        </form>
+            {s.label}
+          </a>
+        ))}
+      </nav>
 
-        <p className="mt-2 text-sm text-center">
-          {status === "ok" && "Thanks! Please check your inbox for a confirmation."}
-          {status === "error" && "Something went wrong. Please try again."}
-        </p>
-
-        <nav
-          aria-label="Social links"
-          className="mt-8 flex items-center justify-center gap-5 text-sm text-gray-600"
-        >
-          {(socials || []).map((s) => (
-            <a
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="underline-offset-4 hover:underline"
-            >
-              {s.label}
-            </a>
-          ))}
-        </nav>
-
-        <footer className="mt-10 text-xs text-gray-500">
-          © {new Date().getFullYear()} Let’s Talk About Autism
-        </footer>
-      </section>
-    </main>
-  );
+      <footer className="mt-10 text-xs text-gray-500">
+        © {new Date().getFullYear()} Let’s Talk About Autism
+      </footer>
+    </section>
+  </main>
+);
 }

@@ -1,5 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://letstalkaboutautism.org";
@@ -10,8 +13,7 @@ export const metadata: Metadata = {
     default: "Let’s Talk About Autism",
     template: "%s — Let’s Talk About Autism",
   },
-  description:
-    "Resources, guidance, and community support — coming soon.",
+  description: "Resources, guidance, and community support — coming soon.",
   openGraph: {
     title: "Let’s Talk About Autism — Coming Soon",
     description:
@@ -19,15 +21,10 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "Let’s Talk About Autism",
     type: "website",
-    images: ["/ComingSoon.jpg"], // uses your existing hero as OG image
+    images: ["/ComingSoon.jpg"],
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  icons: {
-    icon: "/favicon.ico",
-  },
+  robots: { index: true, follow: true },
+  icons: { icon: "/favicon.ico" },
 };
 
 export default function RootLayout({
@@ -37,7 +34,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

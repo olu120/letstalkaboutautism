@@ -2,8 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* simple font smoothing */
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* font smoothing */
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* a subtle page background tint (optional) */
+:root {
+  --brand: 21 118 197; /* rgb values for #1576C5 */
 }
+
+/* utilities */
+.btn {
+  @apply rounded-xl px-5 py-3 font-medium inline-flex items-center justify-center transition active:translate-y-px;
+}
+.btn-primary {
+  @apply btn bg-brand text-white border border-brand hover:bg-brand/90;
+}
+.text-muted { @apply text-gray-600; }
+.card { @apply rounded-2xl border bg-white; }
