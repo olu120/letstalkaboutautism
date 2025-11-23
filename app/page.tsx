@@ -9,25 +9,29 @@ import Programs from "@/components/home/Programs";
 import Testimonials from "@/components/home/Testimonials";
 import Partners from "@/components/home/Partners";
 import NewsletterBanner from "@/components/home/NewsletterBanner";
-import { getSiteSettings, getHomepageContent, getRecentPosts } from "@/lib/api/wordpress";
+
+import {
+  getSiteSettings,
+  getHomepageContent,
+  getRecentPosts,
+} from "@/lib/api/wordpress";
 
 export const revalidate = 60;
 
-function launchIsInFuture(iso?: string) {
+// --- Helpers ---
+function launchIsInFuture(iso?: string | null) {
   if (!iso) return false;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return false;
-  return d.getTime() > Date.now(); // future => normally show Coming Soon
+  return d.getTime() > Date.now();
 }
 
-function shouldShowComingSoon(launchDate?: string) {
-  // Bypass in dev/local if flag is set
+function shouldShowComingSoon(launchDate?: string | null) {
   if (process.env.NEXT_PUBLIC_BYPASS_COMING_SOON === "1") return false;
   return launchIsInFuture(launchDate);
 }
 
-
-
+// --- Page ---
 export default async function Page() {
   const [settings, home, posts] = await Promise.all([
     getSiteSettings(),
@@ -35,39 +39,59 @@ export default async function Page() {
     getRecentPosts(),
   ]);
 
-  const launchDate = settings?.launchDate || process.env.NEXT_PUBLIC_LAUNCH_DATE;
+  // FIX: Use correct lowercase WP fields
+  const launchDate =
+    settings?.launchdate || process.env.NEXT_PUBLIC_LAUNCH_DATE;
+
   const socials = [
-    { label: "Instagram", href: settings?.instagramUrl || "https://instagram.com" },
-    { label: "LinkedIn",  href: settings?.linkedinUrl  || "https://linkedin.com" },
-    { label: "WhatsApp",  href: settings?.whatsappUrl  || "https://wa.me/" },
+    {
+      label: "Instagram",
+      href: settings?.instagramurl || "https://instagram.com",
+    },
+    {
+      label: "LinkedIn",
+      href: settings?.linkedinurl || "https://linkedin.com",
+    },
+    {
+      label: "WhatsApp",
+      href: settings?.whatsappurl || "https://wa.me/",
+    },
   ];
 
- if (launchIsInFuture(launchDate) && process.env.NEXT_PUBLIC_BYPASS_COMING_SOON !== "1") {
+  // Coming soon logic
+  if (
+    launchIsInFuture(launchDate) &&
+    process.env.NEXT_PUBLIC_BYPASS_COMING_SOON !== "1"
+  ) {
     return <ComingSoon initialLaunchDate={launchDate} socials={socials} />;
   }
+
   return (
     <>
-  <Hero
- heading={home?.heroHeading || "Let’s Talk About Autism"}
-  subheading={home?.heroSubheading}
-  primaryText={home?.heroPrimaryText}
-  primaryLink={home?.heroPrimaryLink || "/contact"}
-  secondaryText={home?.heroSecondaryText}
-  secondaryLink={home?.heroSecondaryLink || "/get-involved"}
-  images={home?.heroGallery || []}
-  />
+      <Hero
+        heading={home?.heroHeading || "Let’s Talk About Autism"}
+        subheading={home?.heroSubheading}
+        primaryText={home?.heroPrimaryText}
+        primaryLink={home?.heroPrimaryLink || "/contact"}
+        secondaryText={home?.heroSecondaryText}
+        secondaryLink={home?.heroSecondaryLink || "/get-involved"}
+        images={home?.heroGallery || []}
+      />
+
       <Mission items={home?.missionCards || []} />
-<Programs />
-<Stats items={home?.stats || []} />
-<Updates posts={posts} />
-<Testimonials />
-<Partners />
-<NewsletterBanner />
-<Quote
-  text={home?.quoteText}
-  ctaText={home?.quoteButtonText}
-  ctaLink={home?.quoteButtonLink || "/services"}
-/>
+      <Programs />
+      <Stats items={home?.stats || []} />
+      <Updates posts={posts} />
+      <Testimonials />
+      <Partners />
+      <NewsletterBanner />
+
+      <Quote
+        text={home?.quoteText}
+        ctaText={home?.quoteButtonText}
+        ctaLink={home?.quoteButtonLink || "/services"}
+      />
+
       <Footer />
     </>
   );
