@@ -85,38 +85,40 @@ export default function Services({ content }: { content: ServicesContent | null 
           </div>
 
           <div className="mt-10 grid md:grid-cols-3 gap-6">
-            {(offerCards.length ? offerCards : fallbackOfferCards).map((card) => {
-              const Icon = iconMap[card.icon || "education"] || GraduationCap;
+            {(offerCards.length ? offerCards : fallbackOfferCards).map((card, idx) => {
+  const icons = [GraduationCap, Users, HeartHandshake];
+  const Icon = icons[idx % icons.length];
 
-              return (
-                <motion.article
-                  key={card.title}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.25 }}
-                  transition={{ duration: 0.45 }}
-                  className="card p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="h-12 w-12 rounded-xl bg-brand-light flex items-center justify-center mb-4">
-                    <Icon className="h-6 w-6 text-brand" />
-                  </div>
+  return (
+    <motion.article
+      key={card.title}
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.45 }}
+      className="card p-6 hover:shadow-md transition-shadow"
+    >
+      <div className="h-12 w-12 rounded-xl bg-brand-light flex items-center justify-center mb-4">
+        <Icon className="h-6 w-6 text-brand" />
+      </div>
 
-                  <h3 className="text-xl font-medium">{card.title}</h3>
+      <h3 className="text-xl font-medium">{card.title}</h3>
 
-                  {card.body && (
-                    <p className="mt-2 text-gray-600">{card.body}</p>
-                  )}
+      {card.body && (
+        <p className="mt-2 text-gray-600">{card.body}</p>
+      )}
 
-                  {!!card.bullets?.length && (
-                    <ul className="mt-4 space-y-1 text-gray-500 text-sm list-disc list-inside">
-                      {card.bullets.map((b, i) => (
-                        <li key={`${card.title}-b-${i}`}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
-                </motion.article>
-              );
-            })}
+      {!!card.bullets?.length && (
+        <ul className="mt-4 space-y-1 text-gray-500 text-sm list-disc list-inside">
+          {card.bullets.map((b, i) => (
+            <li key={`${card.title}-b-${i}`}>{b}</li>
+          ))}
+        </ul>
+      )}
+    </motion.article>
+  );
+})}
+
           </div>
         </div>
       </section>
