@@ -1,8 +1,16 @@
-export default function ServicesPage() {
+import Services from "@/components/services/Services";
+import Footer from "@/components/home/Footer";
+import { getServicesPageContent } from "@/lib/api/wordpress";
+
+export const revalidate = 60;
+
+export default async function ServicesPage() {
+  const content = await getServicesPageContent();
+
   return (
-    <main className="container py-16">
-      <h1 className="text-3xl font-semibold">Our Services</h1>
-      <p className="mt-2 text-muted">Overview of services will appear here.</p>
-    </main>
+    <>
+      <Services content={content} />
+      <Footer />
+    </>
   );
 }

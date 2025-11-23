@@ -1,6 +1,10 @@
 // lib/api/wordpress.ts
 // Strongly-typed GraphQL client + WP data accessors
 
+/* -------------------------------------------------------
+   Shared Types
+-------------------------------------------------------- */
+
 export type MediaItem = {
   sourceUrl?: string | null;
   altText?: string | null;
@@ -13,10 +17,99 @@ type AcfMediaItemConnection = {
   nodes?: (MediaItem | null)[] | null;
 } | null;
 
+/* -------------------------------------------------------
+   Fetch Helper
+-------------------------------------------------------- */
+
+export async function fetchGraphQL<TData>(
+  query: string,
+  variables: Record<string, unknown> = {}
+): Promise<TData> {
+  const url = process.env.WORDPRESS_API_URL;
+  if (!url) {
+    throw new Error(
+      "Missing WordPress API URL in environment variables (WORDPRESS_API_URL)"
+    );
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+    next: { revalidate: 60 },
+  });
+
+  const json = (await res.json()) as { data?: TData; errors?: unknown };
+
+  if ("errors" in json && json.errors) {
+    // eslint-disable-next-line no-console
+    console.error("WPGraphQL errors:", JSON.stringify(json.errors, null, 2));
+    throw new Error("GraphQL query failed");
+  }
+
+  return (json.data as TData) ?? ({} as TData);
+}
+
+/* -------------------------------------------------------
+   Normalizers (Media)
+-------------------------------------------------------- */
+
+const normalizeMediaEdge = (
+  edge: AcfMediaItemConnectionEdge | null | undefined
+): MediaItem | null => {
+  const n = edge?.node;
+  return n?.sourceUrl ? n : null;
+};
+
+const normalizeGalleryFromEdges = (
+  edges?: (AcfMediaItemConnectionEdge | null)[] | null
+): MediaItem[] => {
+  if (!edges) return [];
+  return edges
+    .map((e) => e?.node || null)
+    .filter((n): n is MediaItem => !!n?.sourceUrl);
+};
+
+/* -------------------------------------------------------
+   Site Settings
+-------------------------------------------------------- */
+
+type GetSiteSettingsResponse = {
+  page?: {
+    siteSettings?: {
+      launchdate?: string | null;
+      instagramurl?: string | null;
+      linkedinurl?: string | null;
+      whatsappurl?: string | null;
+    } | null;
+  } | null;
+};
+
+export async function getSiteSettings() {
+  const query = `
+    query GetSiteSettings {
+      page(id: "site-settings", idType: URI) {
+        siteSettings {
+          launchdate
+          instagramurl
+          linkedinurl
+          whatsappurl
+        }
+      }
+    }
+  `;
+  const data = await fetchGraphQL<GetSiteSettingsResponse>(query);
+  return data?.page?.siteSettings || {};
+}
+
+/* -------------------------------------------------------
+   Homepage Content
+-------------------------------------------------------- */
+
 type MissionCardRaw = {
   cardTitle: string;
   cardDescription?: string | null;
-  cardImage?: AcfMediaItemConnectionEdge | null; // edge in your schema
+  cardImage?: AcfMediaItemConnectionEdge | null;
 };
 
 export type MissionCard = {
@@ -41,7 +134,7 @@ export type HomepageContent = {
   quoteButtonText?: string | null;
   quoteButtonLink?: string | null;
 
-  heroGallery?: MediaItem[] | null; // normalized gallery list
+  heroGallery?: MediaItem[] | null;
 };
 
 type GetHomepageContentResponse = {
@@ -58,138 +151,10 @@ type GetHomepageContentResponse = {
       quoteText?: string | null;
       quoteButtonText?: string | null;
       quoteButtonLink?: string | null;
-      heroGallery?: {
-        edges?: (AcfMediaItemConnectionEdge | null)[] | null;
-      } | null;
+      heroGallery?: { edges?: (AcfMediaItemConnectionEdge | null)[] | null } | null;
     } | null;
   } | null;
 };
-
-type GetSiteSettingsResponse = {
-  page?: {
-    siteSettings?: {
-      launchdate?: string | null;
-      instagramurl?: string | null;
-      linkedinurl?: string | null;
-      whatsappurl?: string | null;
-    } | null;
-  } | null;
-};
-
-export type RecentPost = {
-  id: string;
-  title: string;
-  date: string;
-  excerpt?: string | null;
-  uri: string;
-  featuredImage?: { node?: MediaItem | null } | null;
-  author?: { node?: { name?: string | null } | null } | null;
-  categories?: { nodes?: { name: string; slug: string }[] | null } | null;
-};
-
-type RecentPostsResponse = {
-  posts?: {
-    nodes?: RecentPost[] | null;
-  } | null;
-};
-
-export type FullPost = {
-  id: string;
-  title: string;
-  date: string;
-  content?: string | null;
-  excerpt?: string | null;
-  uri: string;
-  featuredImage?: { node?: MediaItem | null } | null;
-  author?: { node?: { name?: string | null } | null } | null;
-  categories?: { nodes?: { name: string; slug: string }[] | null } | null;
-};
-
-// ---------- Fetch Helper ----------
-export async function fetchGraphQL<TData>(
-  query: string,
-  variables: Record<string, unknown> = {}
-): Promise<TData> {
-  const url = process.env.WORDPRESS_API_URL;
-  if (!url) {
-    throw new Error(
-      "Missing WordPress API URL in environment variables (WORDPRESS_API_URL)"
-    );
-  }
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables }),
-    next: { revalidate: 60 },
-  });
-
-  const json = (await res.json()) as { data?: TData; errors?: unknown };
-  if ("errors" in json && json.errors) {
-    // eslint-disable-next-line no-console
-    console.error("WPGraphQL errors:", JSON.stringify(json.errors, null, 2));
-    throw new Error("GraphQL query failed");
-  }
-
-  return (json.data as TData) ?? ({} as TData);
-}
-
-// ---------- Normalizers ----------
-const normalizeMedia = (
-  m:
-    | MediaItem
-    | AcfMediaItemConnection
-    | AcfMediaItemConnectionEdge
-    | null
-    | undefined
-): MediaItem | null => {
-  if (!m) return null;
-
-  // Direct MediaItem
-  const maybeMedia = m as MediaItem;
-  if (maybeMedia?.sourceUrl) return maybeMedia;
-
-  // Single EDGE object: { node: { sourceUrl, altText } }
-  const maybeEdge = m as AcfMediaItemConnectionEdge;
-  if (maybeEdge?.node?.sourceUrl) return maybeEdge.node;
-
-  // Connection (edges/nodes)
-  const conn = m as AcfMediaItemConnection;
-  const list =
-    (conn?.edges?.map((e) => e?.node || null) ??
-      conn?.nodes ??
-      []) as (MediaItem | null)[];
-  return list.find((n) => n?.sourceUrl) || null;
-};
-
-const normalizeGallery = (
-  g: AcfMediaItemConnection | null | undefined
-): MediaItem[] => {
-  if (!g) return [];
-  const list =
-    (g.edges?.map((e) => e?.node || null) ??
-      g.nodes ??
-      []) as (MediaItem | null)[];
-  return list.filter((n): n is MediaItem => !!n?.sourceUrl);
-};
-
-// ---------- Queries ----------
-export async function getSiteSettings() {
-  const query = `
-    query GetSiteSettings {
-      page(id: "site-settings", idType: URI) {
-        siteSettings {
-          launchdate
-          instagramurl
-          linkedinurl
-          whatsappurl
-        }
-      }
-    }
-  `;
-  const data = await fetchGraphQL<GetSiteSettingsResponse>(query);
-  return data?.page?.siteSettings || {};
-}
 
 export async function getHomepageContent(): Promise<HomepageContent | null> {
   const query = `
@@ -240,17 +205,16 @@ export async function getHomepageContent(): Promise<HomepageContent | null> {
   const hc = raw?.page?.homepageContent;
   if (!hc) return null;
 
-  const missionCards: MissionCard[] = (hc.missionCards ?? []).map((c) => ({
-    cardTitle: c.cardTitle,
-    cardDescription: c.cardDescription ?? null,
-    cardImage: normalizeMedia(c.cardImage ?? null),
-  }));
+  const missionCards: MissionCard[] =
+    (hc.missionCards ?? []).map((c) => ({
+      cardTitle: c.cardTitle,
+      cardDescription: c.cardDescription ?? null,
+      cardImage: normalizeMediaEdge(c.cardImage),
+    })) ?? [];
 
-  const heroGallery = normalizeGallery(
-    (hc.heroGallery as unknown as AcfMediaItemConnection) ?? null
-  );
+  const heroGallery = normalizeGalleryFromEdges(hc.heroGallery?.edges);
 
-  const normalized: HomepageContent = {
+  return {
     heroHeading: hc.heroHeading ?? null,
     heroSubheading: hc.heroSubheading ?? null,
     heroPrimaryText: hc.heroPrimaryText ?? null,
@@ -264,11 +228,25 @@ export async function getHomepageContent(): Promise<HomepageContent | null> {
     quoteButtonLink: hc.quoteButtonLink ?? null,
     heroGallery,
   };
-
-  return normalized;
 }
 
-export async function getRecentPosts(): Promise<RecentPost[]> {
+/* -------------------------------------------------------
+   Posts (Recent + Single)
+-------------------------------------------------------- */
+
+export type PostNode = {
+  id: string;
+  title: string;
+  date: string;
+  excerpt?: string | null;
+  content?: string | null;
+  uri: string;
+  featuredImage?: { node?: { sourceUrl?: string | null } | null } | null;
+  author?: { node?: { name?: string | null } | null } | null;
+  categories?: { nodes?: { name: string; slug: string }[] | null } | null;
+};
+
+export async function getRecentPosts(): Promise<PostNode[]> {
   const query = `
     query RecentPosts {
       posts(first: 3, where: { status: PUBLISH, orderby: { field: DATE, order: DESC } }) {
@@ -278,63 +256,293 @@ export async function getRecentPosts(): Promise<RecentPost[]> {
           date
           excerpt
           uri
-          featuredImage { node { sourceUrl altText } }
+          featuredImage { node { sourceUrl } }
           author { node { name } }
           categories { nodes { name slug } }
         }
       }
     }
   `;
+  const data = await fetchGraphQL<{
+    posts?: { nodes?: PostNode[] | null } | null;
+  }>(query);
 
-  const data = await fetchGraphQL<RecentPostsResponse>(query);
   return data?.posts?.nodes ?? [];
 }
 
-/**
- * Robust single-post resolver by URI.
- * WPGraphQL is strict about leading/trailing slashes and /blog base.
- * We try several candidates automatically.
- */
-// 2) single post by URI (robust resolver + slug fallback)
-export async function getPostByUri(uri: string): Promise<FullPost | null> {
+export async function getPostByUri(uri: string): Promise<PostNode | null> {
   const query = `
-    query PostById($id: ID!) {
-      post(id: $id, idType: URI) {
+    query PostByUri($uri: ID!) {
+      post(id: $uri, idType: URI) {
         id
         title
         date
         content
         excerpt
         uri
-        featuredImage { node { sourceUrl altText } }
+        featuredImage { node { sourceUrl } }
         author { node { name } }
         categories { nodes { name slug } }
       }
     }
   `;
+  const data = await fetchGraphQL<{ post?: PostNode | null }>(query, { uri });
+  return data?.post ?? null;
+}
 
-  const ensureLeadingSlash = (u: string) => (u.startsWith("/") ? u : `/${u}`);
-  const ensureTrailingSlash = (u: string) => (u.endsWith("/") ? u : `${u}/`);
+/* -------------------------------------------------------
+   About Page Content
+-------------------------------------------------------- */
 
-  const base = ensureTrailingSlash(ensureLeadingSlash(uri));
+export type AboutContent = {
+  heroHeading?: string | null;
+  heroSubheading?: string | null;
+  heroBody?: string | null;
+  heroImage?: MediaItem | null;
 
-  const candidates = Array.from(
-    new Set([
-      base,
-      base.replace(/\/+$/, ""),
-      `/blog${base}`.replace(/\/blog\/blog\//, "/blog/"),
-      base.replace(/^\/blog/, ""),
-    ])
-  ).filter(Boolean);
+  journeyItems?: {
+    year?: string | null;
+    title?: string | null;
+    description?: string | null;
+  }[];
 
-  for (const candidate of candidates) {
-    // ✅ Bypass Next cache for debugging + correctness
-    const data = await fetchGraphQL<{ post?: FullPost | null }>(query, {
-      id: candidate,
-    });
+  coreValues?: {
+    valueTitle?: string | null;
+    valueDescription?: string | null;
+    valueImage?: MediaItem | null;
+  }[];
 
-    if (data?.post) return data.post;
-  }
+  leadershipTeam?: {
+    name?: string | null;
+    role?: string | null;
+    bio?: string | null;
+    photo?: MediaItem | null;
+  }[];
 
-  return null;
+  ctaText?: string | null;
+  ctaButtonText?: string | null;
+  ctaButtonLink?: string | null;
+};
+
+export async function getAboutContent(): Promise<AboutContent | null> {
+  const query = `
+    query AboutContent {
+      page(id: "about", idType: URI) {
+        aboutPageContent {
+          heroHeading
+          herosubheading
+          herobody
+          heroimage { node { sourceUrl altText } }
+
+          journeyItems { year title description }
+
+          corevalues {
+            valueTitle
+            valuedescription
+            valueimage { node { sourceUrl altText } }
+          }
+
+          leadershipteam {
+            name
+            role
+            bio
+            photo { node { sourceUrl altText } }
+          }
+
+          ctatext
+          ctaButtonText
+          ctaButtonLink
+        }
+      }
+    }
+  `;
+
+  const data = await fetchGraphQL<{
+    page?: { aboutPageContent?: any | null } | null;
+  }>(query);
+
+  const ac = data?.page?.aboutPageContent;
+  if (!ac) return null;
+
+  return {
+    heroHeading: ac.heroHeading ?? null,
+    heroSubheading: ac.herosubheading ?? null,
+    heroBody: ac.herobody ?? null,
+    heroImage: normalizeMediaEdge(ac.heroimage),
+
+    journeyItems: ac.journeyItems ?? [],
+
+    coreValues: (ac.corevalues ?? []).map((v: any) => ({
+      valueTitle: v.valueTitle ?? null,
+      valueDescription: v.valuedescription ?? null,
+      valueImage: normalizeMediaEdge(v.valueimage),
+    })),
+
+    leadershipTeam: (ac.leadershipteam ?? []).map((m: any) => ({
+      name: m.name ?? null,
+      role: m.role ?? null,
+      bio: m.bio ?? null,
+      photo: normalizeMediaEdge(m.photo),
+    })),
+
+    ctaText: ac.ctatext ?? null,
+    ctaButtonText: ac.ctaButtonText ?? null,
+    ctaButtonLink: ac.ctaButtonLink ?? null,
+  };
+}
+
+/* -------------------------------------------------------
+   SERVICES PAGE CONTENT (ACF) — FINAL
+   NOTE: These keys MUST match your schema.
+-------------------------------------------------------- */
+
+/* -------------------------------------------------------
+   SERVICES PAGE CONTENT (ACF) — schema-correct
+-------------------------------------------------------- */
+
+export type ServicesContent = {
+  heroHeading?: string | null;
+  heroBody?: string | null;
+
+  offerHeading?: string | null;
+  offerCards?: {
+    title: string;
+    body?: string | null;
+    bullets?: string[];
+  }[] | null;
+
+  lifeStageHeading?: string | null;
+  lifeStagePrograms?: {
+    stageLabel: string;
+    title: string;
+    body?: string | null;
+    tags?: string[];
+  }[] | null;
+
+  faqHeading?: string | null;
+  faqs?: {
+    question: string;
+    answer?: string | null;
+  }[] | null;
+
+  ctaBody?: string | null;
+  ctaButtonText?: string | null;
+  ctaButtonLink?: string | null;
+};
+
+type ServicesPageRaw = {
+  page?: {
+    servicespagecontent?: {
+      heroheading?: string | null;
+      herobody?: string | null;
+
+      offerheading?: string | null;
+      offercards?: {
+        cardtitle?: string | null;
+        cardbody?: string | null;
+        cardbullets?: { bullettext?: string | null }[] | null;
+      }[] | null;
+
+      lifestageheading?: string | null;
+      lifestageprograms?: {
+        stagelabel?: string | null;
+        programtitle?: string | null;
+        programbody?: string | null;
+        programtags?: { tagtext?: string | null }[] | null;
+      }[] | null;
+
+      faqheading?: string | null;
+      faqs?: {
+        question?: string | null;
+        answer?: string | null;
+      }[] | null;
+
+      ctabody?: string | null;
+      ctabuttontext?: string | null;
+      ctabuttonlink?: string | null;
+    } | null;
+  } | null;
+};
+
+export async function getServicesPageContent(): Promise<ServicesContent | null> {
+  const query = `
+    query ServicesPage {
+      page(id: "services", idType: URI) {
+        servicespagecontent {
+          heroheading
+          herobody
+
+          offerheading
+          offercards {
+            cardtitle
+            cardbody
+            cardbullets {
+              bullettext
+            }
+          }
+
+          lifestageheading
+          lifestageprograms {
+            stagelabel
+            programtitle
+            programbody
+            programtags {
+              tagtext
+            }
+          }
+
+          faqheading
+          faqs {
+            question
+            answer
+          }
+
+          ctabody
+          ctabuttontext
+          ctabuttonlink
+        }
+      }
+    }
+  `;
+
+  const data = await fetchGraphQL<ServicesPageRaw>(query);
+  const raw = data?.page?.servicespagecontent;
+  if (!raw) return null;
+
+  return {
+    heroHeading: raw.heroheading ?? null,
+    heroBody: raw.herobody ?? null,
+
+    offerHeading: raw.offerheading ?? null,
+    offerCards:
+      raw.offercards?.map((c) => ({
+        title: c.cardtitle ?? "",
+        body: c.cardbody ?? null,
+        bullets: (c.cardbullets ?? [])
+          .map((b) => b?.bullettext ?? "")
+          .filter(Boolean),
+      })) ?? [],
+
+    lifeStageHeading: raw.lifestageheading ?? null,
+    lifeStagePrograms:
+      raw.lifestageprograms?.map((p) => ({
+        stageLabel: p.stagelabel ?? "",
+        title: p.programtitle ?? "",
+        body: p.programbody ?? null,
+        tags: (p.programtags ?? [])
+          .map((t) => t?.tagtext ?? "")
+          .filter(Boolean),
+      })) ?? [],
+
+    faqHeading: raw.faqheading ?? null,
+    faqs:
+      raw.faqs?.map((f) => ({
+        question: f.question ?? "",
+        answer: f.answer ?? null,
+      })) ?? [],
+
+    ctaBody: raw.ctabody ?? null,
+    ctaButtonText: raw.ctabuttontext ?? null,
+    ctaButtonLink: raw.ctabuttonlink ?? null,
+  };
 }
