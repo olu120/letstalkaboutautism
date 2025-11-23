@@ -8,25 +8,32 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: "1rem",
+      padding: "1.25rem",
       screens: {
         sm: "640px",
         md: "768px",
-        lg: "1024px",
-        xl: "1280px",
+        lg: "1100px",
+        xl: "1300px",
+        "2xl": "1440px",
       },
     },
     extend: {
-            colors: {
+      colors: {
         brand: {
-          DEFAULT: "#1576C5",   // main brand blue
-          dark: "#0F5C99",      // darker hover shade
-          light: "#E6F2FB",     // soft background tint
+          DEFAULT: "#1E5ACB",
+          dark: "#1546A0",
+          light: "#E8F0FF",
         },
-      },
-
-      borderRadius: {
-        "2xl": "1rem",
+        secondary: {
+          DEFAULT: "#35B457",
+          dark: "#288B40",
+          light: "#E9F8EF",
+        },
+        accent: {
+          DEFAULT: "#CF3A32",
+          dark: "#A62D27",
+          light: "#FDEBE9",
+        },
       },
     },
   },

@@ -11,11 +11,87 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 }
 
 /* utilities */
-.btn {
-  @apply rounded-xl px-5 py-3 font-medium inline-flex items-center justify-center transition active:translate-y-px;
+/* helpers */
+.btn { @apply rounded-xl px-5 py-3 font-medium inline-flex items-center justify-center transition active:translate-y-px; }
+.btn-primary   { @apply btn bg-brand text-white border border-brand hover:bg-brand-dark; }
+.btn-secondary { @apply btn bg-secondary text-white border border-secondary hover:bg-secondary-dark; }
+.btn-accent    { @apply btn bg-accent text-white border border-accent hover:bg-accent-dark; }
+.badge        { @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium; }
+.badge-warm   { @apply badge bg-accent-light text-accent-dark; }
+.badge-calm   { @apply badge bg-secondary-light text-secondary-dark; }
+.text-muted   { @apply text-gray-600; }
+.card         { @apply rounded-2xl border bg-white; }
+
+
+/* in globals.css */
+img.logo-shadow { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+
+/* soft background blobs */
+.bg-soft-blobs {
+  background:
+    radial-gradient(600px circle at 10% 10%, rgba(30,90,203,0.08), transparent 55%),
+    radial-gradient(700px circle at 90% 20%, rgba(53,180,87,0.08), transparent 55%),
+    radial-gradient(600px circle at 50% 90%, rgba(207,58,50,0.07), transparent 60%);
 }
-.btn-primary {
-  @apply btn bg-brand text-white border border-brand hover:bg-brand/90;
+
+/* subtle grid texture */
+.bg-subtle-grid {
+  background-image:
+    linear-gradient(to right, rgba(15,23,42,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15,23,42,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
-.text-muted { @apply text-gray-600; }
-.card { @apply rounded-2xl border bg-white; }
+
+/* soft noise overlay (barely visible) */
+.bg-noise {
+  background-image: url("/patterns/noise.png");
+  background-size: 200px 200px;
+  opacity: 0.05;
+}
+
+/* --- HERO CREATIVE OVERLAYS --- */
+
+/* soft aurora wash (animated gradients) */
+.hero-aurora {
+  background:
+    radial-gradient(800px circle at 10% 10%, rgba(30,90,203,0.30), transparent 60%),
+    radial-gradient(900px circle at 90% 20%, rgba(53,180,87,0.25), transparent 60%),
+    radial-gradient(700px circle at 50% 90%, rgba(207,58,50,0.22), transparent 60%);
+  filter: blur(30px);
+}
+
+/* faint dot texture */
+.hero-dots {
+  background-image: radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px);
+  background-size: 18px 18px;
+  opacity: 0.12;
+}
+
+/* floating colorful blobs */
+.hero-floating {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.18;
+}
+
+.hero-blue {
+  background: #1E5ACB;
+  top: -40px;
+  left: -30px;
+}
+
+.hero-green {
+  background: #35B457;
+  bottom: -40px;
+  right: -20px;
+}
+
+.hero-red {
+  background: #CF3A32;
+  top: 40%;
+  right: 10%;
+}
+

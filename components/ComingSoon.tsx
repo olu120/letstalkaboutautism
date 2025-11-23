@@ -91,6 +91,7 @@ export default function ComingSoon({
       </div>
 
       <img src="/logo.png" alt="LTA logo" className="mx-auto w-16 h-16 mb-4" />
+      <span className="badge badge-calm mb-2">Coming Soon</span>
 
       <h1 className="text-3xl md:text-5xl font-semibold leading-tight">
         Let’s Talk About Autism
