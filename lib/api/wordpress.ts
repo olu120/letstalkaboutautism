@@ -28,7 +28,7 @@ export async function fetchGraphQL<TData>(
   const url = process.env.WORDPRESS_API_URL;
   if (!url) {
     throw new Error(
-      "Missing WordPress API URL in environment variables (WORDPRESS_API_URL)"
+      "Missing WORDPRESS_API_URL env var. Add it in Vercel Environment Variables."
     );
   }
 
@@ -39,9 +39,18 @@ export async function fetchGraphQL<TData>(
     next: { revalidate: 60 },
   });
 
-  const json = (await res.json()) as { data?: TData; errors?: unknown };
+  const text = await res.text();
 
-  if ("errors" in json && json.errors) {
+  // If WP returned HTML (doctype), show it clearly
+  if (text.trim().startsWith("<")) {
+    // eslint-disable-next-line no-console
+    console.error("WPGraphQL returned HTML instead of JSON:\n", text.slice(0, 300));
+    throw new Error("WPGraphQL did not return JSON. Check WORDPRESS_API_URL or WP access.");
+  }
+
+  const json = JSON.parse(text) as { data?: TData; errors?: unknown };
+
+  if (json.errors) {
     // eslint-disable-next-line no-console
     console.error("WPGraphQL errors:", JSON.stringify(json.errors, null, 2));
     throw new Error("GraphQL query failed");
@@ -49,6 +58,7 @@ export async function fetchGraphQL<TData>(
 
   return (json.data as TData) ?? ({} as TData);
 }
+
 
 /* -------------------------------------------------------
    Normalizers (Media)
