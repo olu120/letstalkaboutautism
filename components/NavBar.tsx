@@ -151,13 +151,13 @@ export default function NavBar() {
 
               <div className="rounded-xl border bg-gray-50 p-3">
                 <p className="font-medium text-gray-900">Phone / WhatsApp</p>
-                <p className="text-gray-700">+256 XXX XXX XXX</p>
+                <p className="text-gray-700">+34666626498</p>
               </div>
 
               <div className="rounded-xl border bg-gray-50 p-3">
                 <p className="font-medium text-gray-900">Office</p>
                 <p className="text-gray-700">
-                  Kampala, Uganda (exact address shared on request)
+                  Address (exact address shared on request)
                 </p>
               </div>
             </div>
