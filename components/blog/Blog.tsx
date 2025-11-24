@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import type { BlogPageContent, BlogPost } from "@/lib/api/wordpress";
+import type { BlogPageContent, BlogPost, FeaturedPostRow } from "@/lib/api/wordpress";
 
 function buildPostHref(uri: string) {
   if (!uri) return "/blog";
@@ -24,7 +24,7 @@ export default function Blog({
 
     featuredHeading,
     featuredbody,
-    featuredposts,
+    featuredposts, // <-- now correctly an array of rows
 
     topicfilters,
 
@@ -33,6 +33,19 @@ export default function Blog({
     ctabuttonlink,
   } = content;
 
+  /** ----------------------------------------------------
+   * FIXED FEATURED POSTS LOGIC
+   * ACF repeater => ALWAYS an array of rows
+   ----------------------------------------------------- */
+  const featured: BlogPost[] = (featuredposts ?? [])
+    .flatMap((row: FeaturedPostRow | null) => row?.post?.nodes ?? [])
+    .filter((p): p is BlogPost => !!p?.id);
+
+  const featuredIds = new Set(featured.map((p) => p.id));
+
+  /** ----------------------------------------------------
+   * FILTERS
+   ----------------------------------------------------- */
   const fallbackFilters = [
     { filterLabel: "All", filterSlug: "all" },
     { filterLabel: "Early years", filterSlug: "early-years" },
@@ -48,39 +61,33 @@ export default function Blog({
       filterSlug: f.filterSlug || "all",
     }));
 
-const featured =
-  featuredposts?.post?.nodes?.filter(
-    (n): n is BlogPost => n && n.__typename === "Post"
-  ) ?? [];
-
-
-
-
-
-  const featuredIds = new Set(featured.map((p) => p.id));
-
   const [active, setActive] = useState(filters[0]?.filterSlug || "all");
   const [q, setQ] = useState("");
 
-  const base =
-  active === "all"
-    ? posts
-    : posts.filter((p) =>
-        (p.categories?.nodes ?? []).some(
-          (c) => c.slug?.toLowerCase() === active
-        )
-      );
+  /** ----------------------------------------------------
+   * FILTERED POSTS
+   ----------------------------------------------------- */
+  const filteredPosts = useMemo(() => {
+    const base =
+      active === "all"
+        ? posts
+        : posts.filter((p) =>
+            (p.categories?.nodes ?? []).some(
+              (c) => c.slug?.toLowerCase() === active
+            )
+          );
 
-const withoutFeatured = base.filter((p) => !featuredIds.has(p.id));
+    const withoutFeatured = base.filter((p) => !featuredIds.has(p.id));
 
-const filteredPosts = !q.trim()
-  ? withoutFeatured
-  : withoutFeatured.filter((p) => {
-      const query = q.toLowerCase();
-      return [p.title, p.excerpt]
+    if (!q.trim()) return withoutFeatured;
+
+    const query = q.toLowerCase();
+    return withoutFeatured.filter((p) =>
+      [p.title, p.excerpt]
         .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(query));
-    });
+        .some((v) => String(v).toLowerCase().includes(query))
+    );
+  }, [active, q, posts, featuredIds]);
 
   return (
     <main className="bg-white">
@@ -124,9 +131,7 @@ const filteredPosts = !q.trim()
               {featuredHeading || "Featured articles"}
             </h2>
             {featuredbody && (
-              <p className="text-muted mt-2 max-w-3xl">
-                {featuredbody}
-              </p>
+              <p className="text-muted mt-2 max-w-3xl">{featuredbody}</p>
             )}
 
             <div className="mt-8 grid md:grid-cols-3 gap-6">
@@ -150,24 +155,40 @@ const filteredPosts = !q.trim()
                   >
                     {img && (
                       <a href={href} className="block h-44 w-full overflow-hidden">
-                        <img src={img} alt={p.title} className="h-full w-full object-cover" />
+                        <img
+                          src={img}
+                          alt={p.title}
+                          className="h-full w-full object-cover"
+                        />
                       </a>
                     )}
+
                     <div className="p-6 flex-1 flex flex-col">
                       <div className="text-xs text-gray-500">
                         {date}
-                        {p.author?.node?.name ? ` · By ${p.author.node.name}` : ""}
+                        {p.author?.node?.name
+                          ? ` · By ${p.author.node.name}`
+                          : ""}
                       </div>
-                      <a href={href} className="mt-2 font-medium line-clamp-2 hover:underline">
+
+                      <a
+                        href={href}
+                        className="mt-2 font-medium line-clamp-2 hover:underline"
+                      >
                         {p.title}
                       </a>
+
                       {p.excerpt && (
                         <div
                           className="prose prose-sm mt-3 text-muted line-clamp-3"
                           dangerouslySetInnerHTML={{ __html: p.excerpt }}
                         />
                       )}
-                      <a href={href} className="mt-4 inline-block text-brand font-medium hover:underline">
+
+                      <a
+                        href={href}
+                        className="mt-4 inline-block text-brand font-medium hover:underline"
+                      >
                         Read more →
                       </a>
                     </div>
@@ -183,6 +204,7 @@ const filteredPosts = !q.trim()
       <section className="py-12 bg-white bg-subtle-grid">
         <div className="container max-w-6xl">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* FILTER BUTTONS */}
             <div className="flex flex-wrap gap-2">
               {filters.map((f) => (
                 <button
@@ -199,6 +221,7 @@ const filteredPosts = !q.trim()
               ))}
             </div>
 
+            {/* SEARCH */}
             <div className="relative w-full md:w-96">
               <input
                 value={q}
@@ -214,7 +237,10 @@ const filteredPosts = !q.trim()
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
-            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: 0.06 } },
+            }}
             className="mt-8 grid md:grid-cols-3 gap-6"
           >
             {filteredPosts.map((p) => {
@@ -231,22 +257,34 @@ const filteredPosts = !q.trim()
               return (
                 <motion.article
                   key={p.id}
-                  variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
+                  variants={{
+                    hidden: { opacity: 0, y: 8 },
+                    show: { opacity: 1, y: 0 },
+                  }}
                   className="card overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col"
                 >
                   {img && (
                     <a href={href} className="block h-40 w-full overflow-hidden">
-                      <img src={img} alt={p.title} className="h-full w-full object-cover" />
+                      <img
+                        src={img}
+                        alt={p.title}
+                        className="h-full w-full object-cover"
+                      />
                     </a>
                   )}
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="text-xs text-gray-500">
                       {date}
                       {author ? ` · By ${author}` : ""}
-                      {cats.length ? ` · ${cats.map((c) => c.name).join(", ")}` : ""}
+                      {cats.length
+                        ? ` · ${cats.map((c) => c.name).join(", ")}`
+                        : ""}
                     </div>
 
-                    <a href={href} className="mt-2 font-medium line-clamp-2 hover:underline">
+                    <a
+                      href={href}
+                      className="mt-2 font-medium line-clamp-2 hover:underline"
+                    >
                       {p.title}
                     </a>
 
@@ -257,7 +295,10 @@ const filteredPosts = !q.trim()
                       />
                     )}
 
-                    <a href={href} className="mt-4 inline-block text-brand font-medium hover:underline">
+                    <a
+                      href={href}
+                      className="mt-4 inline-block text-brand font-medium hover:underline"
+                    >
                       Read more →
                     </a>
                   </div>
@@ -275,14 +316,14 @@ const filteredPosts = !q.trim()
             <p className="text-gray-900 font-medium text-lg">
               {ctatext}
             </p>
+
             {ctaButtonText && ctabuttonlink && (
               <a
-  href={ctabuttonlink}
-  className="btn btn-primary px-6 py-3 whitespace-nowrap rounded-xl text-center leading-snug"
->
-  {ctaButtonText}
-</a>
-
+                href={ctabuttonlink}
+                className="btn btn-primary px-6 py-3 whitespace-nowrap rounded-xl text-center leading-snug"
+              >
+                {ctaButtonText}
+              </a>
             )}
           </div>
         </section>
