@@ -38,10 +38,30 @@ export default function Blog({
    * ACF repeater => ALWAYS an array of rows
    ----------------------------------------------------- */
   const featured: BlogPost[] = (featuredposts ?? [])
-    .flatMap((row: FeaturedPostRow | null) => row?.post?.nodes ?? [])
-    .filter((p): p is BlogPost => !!p?.id);
+  .flatMap((row) => {
+    const postField = row?.post;
+    if (!postField) return [];
 
-  const featuredIds = new Set(featured.map((p) => p.id));
+    if (
+      typeof postField === "object" &&
+      postField !== null &&
+      "nodes" in postField &&
+      Array.isArray((postField as any).nodes)
+    ) {
+      return (postField as { nodes?: BlogPost[] | null }).nodes ?? [];
+    }
+
+    if (typeof postField === "object" && postField !== null && "id" in postField) {
+      return [postField as BlogPost];
+    }
+
+    return [];
+  })
+  .filter((p): p is BlogPost => !!p?.id);
+
+// ✅ FIX — add this back
+const featuredIds = new Set(featured.map((p) => p.id));
+
 
   /** ----------------------------------------------------
    * FILTERS

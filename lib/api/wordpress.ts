@@ -772,8 +772,14 @@ export type BlogPost = {
 };
 
 export type FeaturedPostRow = {
-  post?: BlogPost | null;
-};
+  post?:
+    | {
+        nodes?: BlogPost[] | null;
+      }
+    | BlogPost
+    | null;
+} | null;
+
 
 export type BlogPageContent = {
   heroEyebrow?: string | null;
