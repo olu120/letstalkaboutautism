@@ -1,122 +1,152 @@
 "use client";
-
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/services", label: "Services" },
-  { href: "/resources", label: "Resources" },
-  { href: "/blog", label: "Blog" },
-  { href: "/contact", label: "Contact" },
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "About", href: "/about" },
+  { label: "Services", href: "/services" },
+  { label: "Resources", href: "/resources" },
+  { label: "Blog", href: "/blog" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function NavBar() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [donateOpen, setDonateOpen] = useState(false);
+
+  // close on ESC
+  useEffect(() => {
+    if (!donateOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDonateOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [donateOpen]);
 
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b shadow-sm"
-    >
-      <nav className="container flex items-center justify-between h-16 px-4">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 min-w-0">
-          <img
-            src="/logo-romi.png"
-            alt="Let’s Talk About Autism"
-            className="h-10 md:h-11 w-auto object-contain logo-shadow shrink-0"
-          />
-          <span className="font-semibold text-gray-900 text-base md:text-lg truncate">
-            Let’s Talk About Autism
-          </span>
-        </Link>
+    <>
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b">
+        <div className="container max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          {/* Logo / Brand */}
+          <Link href="/" className="flex items-center gap-2">
+  <Image
+    src="/logo-romi.png"     // << your logo file inside /public (change name if different)
+    alt="Let's Talk About Autism Logo"
+    width={40}          // adjust size as needed
+    height={40}
+    className="object-contain"
+    priority            // ensures navbar logo loads instantly
+  />
+  <span className="font-semibold text-gray-900 text-lg">
+    Let’s Talk About Autism
+  </span>
+</Link>
 
-        {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center gap-6 text-sm">
-          {links.map((l) => (
-            <motion.li key={l.href} whileHover={{ y: -2 }}>
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-6 text-sm text-gray-700">
+            {navLinks.map((l) => (
               <Link
+                key={l.href}
                 href={l.href}
-                className={`transition ${
-                  pathname === l.href
-                    ? "text-brand font-semibold"
-                    : "text-gray-700 hover:text-brand"
-                }`}
+                className="hover:text-gray-900 transition"
               >
                 {l.label}
               </Link>
-            </motion.li>
-          ))}
-        </ul>
+            ))}
+          </nav>
 
-        {/* Donate button (Desktop) */}
-        <motion.div whileHover={{ scale: 1.04 }} className="hidden md:inline-flex">
-          <Link href="/donate" className="btn btn-primary">
-            Donate Now
-          </Link>
-        </motion.div>
+          {/* Donate button */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDonateOpen(true)}
+              className="btn btn-primary"
+              type="button"
+            >
+              Donate Now
+            </button>
+          </div>
+        </div>
+      </header>
 
-        {/* Mobile menu toggle */}
-        <button
-          className="md:hidden p-2 text-gray-800"
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
+      {/* Donate Modal */}
+      {donateOpen && (
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center px-4"
+          aria-modal="true"
+          role="dialog"
         >
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </nav>
+          {/* Backdrop */}
+          <button
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setDonateOpen(false)}
+            aria-label="Close donate dialog"
+            type="button"
+          />
 
-      {/* Mobile Slide Menu */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25 }}
-            className="md:hidden absolute top-16 left-0 w-full bg-white/95 backdrop-blur-lg border-b shadow-lg z-40"
-          >
-            {/* Background blobs */}
-            <div aria-hidden className="absolute inset-0 pointer-events-none">
-              <div className="hero-floating hero-blue opacity-[0.08]" />
-              <div className="hero-floating hero-green opacity-[0.06]" />
+          {/* Modal card */}
+          <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-xl border p-6 md:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+                Support Let’s Talk About Autism
+              </h2>
+
+              <button
+                onClick={() => setDonateOpen(false)}
+                className="text-gray-500 hover:text-gray-800"
+                aria-label="Close"
+                type="button"
+              >
+                ✕
+              </button>
             </div>
 
-            <ul className="relative z-10 flex flex-col px-6 py-6 gap-4 text-base">
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className={`py-2 transition ${
-                    pathname === l.href
-                      ? "text-brand font-semibold"
-                      : "text-gray-700 hover:text-brand"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              ))}
+            <p className="mt-3 text-gray-600 leading-relaxed">
+              Thank you for your willingness to support our work.  
+              We’re currently accepting donations directly through our team.
+              Please reach out using any of the contacts below and we’ll guide you.
+            </p>
 
-              {/* Mobile donate button */}
+            <div className="mt-5 space-y-3 text-sm text-gray-800">
+              <div className="rounded-xl bg-gray-50 border p-4">
+                <p className="font-medium">Email</p>
+                <p className="text-gray-700">info@letstalkaboutautism.org</p>
+              </div>
+
+              <div className="rounded-xl bg-gray-50 border p-4">
+                <p className="font-medium">Phone / WhatsApp</p>
+                <p className="text-gray-700">+34666626498</p>
+              </div>
+
+              <div className="rounded-xl bg-gray-50 border p-4">
+                <p className="font-medium">Office Address</p>
+                <p className="text-gray-700">
+                  Address <br />
+                  (Add full address when ready)
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href="/donate"
-                onClick={() => setOpen(false)}
-                className="btn btn-primary mt-2"
+                href="/contact"
+                onClick={() => setDonateOpen(false)}
+                className="btn btn-secondary"
               >
-                Donate Now
+                Contact Our Team
               </Link>
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.header>
+              <button
+                onClick={() => setDonateOpen(false)}
+                className="btn btn-tertiary"
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

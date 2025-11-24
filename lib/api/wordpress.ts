@@ -546,3 +546,454 @@ export async function getServicesPageContent(): Promise<ServicesContent | null> 
     ctaButtonLink: raw.ctabuttonlink ?? null,
   };
 }
+
+
+// ===============================
+// RESOURCES PAGE TYPES
+// ===============================
+export type ResourcesChip = { chipText?: string | null };
+export type AudienceFilter = { filterLabel?: string | null; filterSlug?: string | null };
+
+export type LibraryCard = {
+  type?: string | null;
+  title?: string | null;
+  audience?: string | null;
+  description?: string | null;
+  meta?: string | null;
+  ctaText?: string | null;
+  ctaLink?: string | null;
+  audienceSlug?: string | null;
+};
+
+export type DownloadCard = {
+  title?: string | null;
+  description?: string | null;
+  meta?: string | null;
+  ctaText?: string | null;
+  ctaLink?: string | null;
+};
+
+export type ForYouCard = {
+  title?: string | null;
+  description?: string | null;
+  bullets?: string[] | null;
+  ctaText?: string | null;
+  ctaLink?: string | null;
+};
+
+export type QuickLink = {
+  label?: string | null;
+  kind?: string | null;
+  link?: string | null;
+};
+
+export type ResourcesContent = {
+  heroEyebrow?: string | null;
+  heroHeading?: string | null;
+  heroBody?: string | null;
+  heroChips?: ResourcesChip[] | null;
+
+  libraryHeading?: string | null;
+  libraryBody?: string | null;
+  audienceFilters?: AudienceFilter[] | null;
+  libraryCards?: LibraryCard[] | null;
+
+  downloadHeading?: string | null;
+  downloadBody?: string | null;
+  downloadCards?: DownloadCard[] | null;
+
+  forYouHeading?: string | null;
+  forYouBody?: string | null;
+  forYouCards?: ForYouCard[] | null;
+
+  helpHeading?: string | null;
+  helpBody?: string | null;
+  helpPrimaryText?: string | null;
+  helpPrimaryLink?: string | null;
+  helpSecondaryText?: string | null;
+  helpSecondaryLink?: string | null;
+
+  quickLinks?: QuickLink[] | null;
+
+  ctaBarText?: string | null;
+  ctaBarButtonText?: string | null;
+  ctaBarButtonLink?: string | null;
+};
+
+// ===============================
+// GRAPHQL RESPONSE TYPE
+// ===============================
+type WP_ResourcesResponse = {
+  page?: {
+    resourcesPageContent?: any;
+  } | null;
+};
+
+// ===============================
+// FETCHER
+// ===============================
+export async function getResourcesContent() {
+  const query = `
+    query ResourcesContent {
+      page(id: "resources", idType: URI) {
+        resourcesPageContent {
+          heroeyebrow
+          heroheading
+          herobody
+          herochips { chiptext }
+
+          libraryheading
+          librarybody
+          audiencefilters { filterlabel filterslug }
+          librarycards {
+            type
+            title
+            audience
+            description
+            meta
+            ctatext
+            ctalink
+          }
+
+          downloadheading
+          downloadbody
+          downloadcards { title description meta ctatext ctalink }
+
+          foryouheading
+          foryoubody
+          foryoucards {
+            title
+            description
+            bullets { bullet }
+          }
+
+          helpheading
+          helpbody
+          helpprimarytext
+          helpprimarylink
+          helpsecondarytext
+          helpsecondarylink
+
+          quicklinks { label kind link }
+
+          ctabartext
+          ctabarbuttontext
+          ctabarbuttonlink
+        }
+      }
+    }
+  `;
+
+  const raw = await fetchGraphQL<WP_ResourcesResponse>(query);
+  const src = raw?.page?.resourcesPageContent;
+  if (!src) return null;
+
+  return {
+    heroEyebrow: src.heroeyebrow,
+    heroHeading: src.heroheading,
+    heroBody: src.herobody,
+    heroChips: src.herochips?.map((c: any) => ({
+      chipText: c.chiptext,
+    })),
+
+    libraryHeading: src.libraryheading,
+    libraryBody: src.librarybody,
+    audienceFilters: src.audiencefilters?.map((f: any) => ({
+      filterLabel: f.filterlabel,
+      filterSlug: f.filterslug,
+    })),
+    libraryCards: src.librarycards?.map((c: any) => ({
+      type: c.type,
+      title: c.title,
+      audience: c.audience,
+      description: c.description,
+      meta: c.meta,
+      ctaText: c.ctatext,
+      ctaLink: c.ctalink,
+      // audienceslug is NOT in schema → leave empty so fallback works
+      audienceSlug: null,
+    })),
+
+    downloadHeading: src.downloadheading,
+    downloadBody: src.downloadbody,
+    downloadCards: src.downloadcards?.map((c: any) => ({
+      title: c.title,
+      description: c.description,
+      meta: c.meta,
+      ctaText: c.ctatext,
+      ctaLink: c.ctalink,
+    })),
+
+    forYouHeading: src.foryouheading,
+    forYouBody: src.foryoubody,
+    forYouCards: src.foryoucards?.map((c: any) => ({
+      title: c.title,
+      description: c.description,
+      bullets: c.bullets?.map((b: any) => b.bullet),
+      // no CTA fields in schema
+      ctaText: null,
+      ctaLink: null,
+    })),
+
+    helpHeading: src.helpheading,
+    helpBody: src.helpbody,
+    helpPrimaryText: src.helpprimarytext,
+    helpPrimaryLink: src.helpprimarylink,
+    helpSecondaryText: src.helpsecondarytext,
+    helpSecondaryLink: src.helpsecondarylink,
+
+    quickLinks: src.quicklinks?.map((q: any) => ({
+      label: q.label,
+      kind: q.kind,
+      link: q.link,
+    })),
+
+    ctaBarText: src.ctabartext,
+    ctaBarButtonText: src.ctabarbuttontext,
+    ctaBarButtonLink: src.ctabarbuttonlink,
+  } as ResourcesContent;
+}
+
+
+// ---------- Blog Types ----------
+export type BlogChip = { chipText: string | null };
+export type BlogFilter = { filterLabel: string | null; filterSlug: string | null };
+
+export type BlogPost = {
+  id: string;
+  title: string;
+  date: string;
+  excerpt?: string | null;
+  content?: string | null;
+  uri: string;
+  featuredImage?: { node?: MediaItem | null } | null;
+  author?: { node?: { name?: string | null } | null } | null;
+  categories?: { nodes?: { name: string; slug: string }[] | null } | null;
+};
+
+export type FeaturedPostRow = {
+  post?: BlogPost | null;
+};
+
+export type BlogPageContent = {
+  heroEyebrow?: string | null;
+  heroHeading?: string | null;
+  herobody?: string | null;
+  herochips?: BlogChip[] | null;
+
+  featuredHeading?: string | null;
+  featuredbody?: string | null;
+  featuredposts?: FeaturedPostRow[] | null;
+
+  topicfilters?: BlogFilter[] | null;
+
+  ctatext?: string | null;
+  ctaButtonText?: string | null;
+  ctabuttonlink?: string | null;
+};
+
+type GetBlogPageResponse = {
+  page?: {
+    blogPageContent?: BlogPageContent | null;
+  } | null;
+};
+
+// ---------- Blog Queries ----------
+export async function getBlogPageContent() {
+  const query = `
+    query BlogPageContent {
+      page(id: "blog", idType: URI) {
+        blogPageContent {
+          heroEyebrow
+          heroHeading
+          herobody
+          herochips { chipText }
+
+          featuredHeading
+          featuredbody
+          featuredposts {
+            post {
+              nodes {
+                __typename
+                ... on Post {
+                  id
+                  title
+                  uri
+                  date
+                  excerpt
+                  featuredImage { node { sourceUrl altText } }
+                  author { node { name } }
+                  categories { nodes { name slug } }
+                }
+              }
+            }
+          }
+
+          topicfilters { filterLabel filterSlug }
+
+          ctatext
+          ctaButtonText
+          ctabuttonlink
+        }
+      }
+    }
+  `;
+
+  const data = await fetchGraphQL<GetBlogPageResponse>(query);
+  return data?.page?.blogPageContent ?? null;
+}
+
+export async function getBlogPosts(first = 20) {
+  const query = `
+    query BlogPosts($first: Int!) {
+      posts(first: $first, where: { status: PUBLISH, orderby: { field: DATE, order: DESC } }) {
+        nodes {
+          id
+          title
+          date
+          excerpt
+          uri
+          featuredImage { node { sourceUrl altText } }
+          author { node { name } }
+          categories { nodes { name slug } }
+        }
+      }
+    }
+  `;
+
+  const data = await fetchGraphQL<{ posts?: { nodes?: BlogPost[] | null } | null }>(
+    query,
+    { first }
+  );
+
+  return data?.posts?.nodes ?? [];
+}
+
+// ---------- Contact Page Types ----------
+export type ContactChip = { chipText?: string | null };
+
+export type ContactOption = { label?: string | null };
+
+export type ContactButton = {
+  label?: string | null;
+  link?: string | null;
+};
+
+export type OpeningHour = { label?: string | null };
+
+export type AccessibilityPoint = { label?: string | null };
+
+export type QuickQuestion = {
+  question?: string | null;
+  answer?: string | null;
+};
+
+export type ContactPageContent = {
+  heroEyebrow?: string | null;
+  heroHeading?: string | null;
+  herobody?: string | null;
+  herochips?: ContactChip[] | null;
+
+  formHeading?: string | null;
+  formbody?: string | null;
+  identityoptions?: ContactOption[] | null;
+  topicoptions?: ContactOption[] | null;
+
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  contactaddress?: string | null;
+
+  bestWaysHeading?: string | null;
+  bestwaysbody?: string | null;
+
+  contactbuttons?: ContactButton[] | null;
+
+  emergencyHeading?: string | null;
+  emergencybody?: string | null;
+  emergencyLinkText?: string | null;
+  emergencylinkurl?: string | null;
+
+  spaceHeading?: string | null;
+  spacebody?: string | null;
+  openinghours?: OpeningHour[] | null;
+  accessibility?: AccessibilityPoint[] | null;
+
+  mapimage?: { node?: MediaItem | null } | null;
+  mapCaption?: string | null;
+
+  quickquestions?: QuickQuestion[] | null;
+
+  ctaBarText?: string | null;
+  ctaBarButtonText?: string | null;
+  ctabarbuttonlink?: string | null;
+};
+
+type GetContactPageResponse = {
+  page?: {
+    contactPageContent?: ContactPageContent | null;
+  } | null;
+};
+
+
+// ---------- Contact Page Query ----------
+export async function getContactPageContent() {
+  const query = `
+    query ContactPageContent {
+      page(id: "contact", idType: URI) {
+        contactPageContent {
+          heroEyebrow
+          heroHeading
+          herobody
+          herochips { chipText }
+
+          formHeading
+          formbody
+          identityoptions { label }
+          topicoptions { label }
+
+          contactEmail
+          contactPhone
+          contactaddress
+
+          bestWaysHeading
+          bestwaysbody
+
+          contactbuttons { label link }
+
+          emergencyHeading
+          emergencybody
+          emergencyLinkText
+          emergencylinkurl
+
+          spaceHeading
+          spacebody
+          openinghours { label }
+          accessibility { label }
+
+          mapimage {
+            node { sourceUrl altText }
+          }
+          mapCaption
+
+          quickquestions { question answer }
+
+          ctaBarText
+          ctaBarButtonText
+          ctabarbuttonlink
+        }
+      }
+    }
+  `;
+
+  const data = await fetchGraphQL<GetContactPageResponse>(query);
+  const c = data?.page?.contactPageContent ?? null;
+  if (!c) return null;
+
+  // normalize mapimage node -> MediaItem or null
+  const mapImage = c.mapimage?.node?.sourceUrl ? c.mapimage.node : null;
+
+  return {
+    ...c,
+    mapimage: mapImage ? { node: mapImage } : null,
+  } as ContactPageContent;
+}
