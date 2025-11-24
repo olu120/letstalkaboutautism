@@ -31,7 +31,7 @@ export default function NavBar() {
             onClick={closeMenu}
           >
             <Image
-              src="/logo.png"   // <-- change if your file name differs
+              src="/logo-romi.png"   // <-- change if your file name differs
               alt="Let’s Talk About Autism logo"
               width={36}
               height={36}
