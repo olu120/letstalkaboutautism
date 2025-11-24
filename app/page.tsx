@@ -7,7 +7,6 @@ import Quote from "@/components/home/Quote";
 import Footer from "@/components/home/Footer";
 import Programs from "@/components/home/Programs";
 import Testimonials from "@/components/home/Testimonials";
-import Partners from "@/components/home/Partners";
 import NewsletterBanner from "@/components/home/NewsletterBanner";
 
 import {
@@ -83,7 +82,6 @@ export default async function Page() {
       <Stats items={home?.stats || []} />
       <Updates posts={posts} />
       <Testimonials />
-      <Partners />
       <NewsletterBanner />
 
       <Quote

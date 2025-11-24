@@ -22,15 +22,9 @@ export default function Updates({ posts = [] as Post[] }) {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.2 }}
-      className="py-20 bg-gray-50 relative overflow-hidden"
+      className="py-16 bg-white"  // ✅ clean & consistent with other pages
     >
-      {/* soft background */}
-      <div aria-hidden className="absolute inset-0 pointer-events-none">
-        <div className="hero-floating hero-blue opacity-[0.08]" />
-        <div className="hero-floating hero-green opacity-[0.06]" />
-      </div>
-
-      <div className="container relative z-10">
+      <div className="container max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-semibold text-center mb-12 text-gray-900">
           Recent Updates
         </h2>
@@ -50,50 +44,44 @@ export default function Updates({ posts = [] as Post[] }) {
 
             const author = p.author?.node?.name;
             const cats = p.categories?.nodes ?? [];
+
             const cleanUri = p.uri?.startsWith("/") ? p.uri : `/${p.uri}`;
-const href = `/blog${cleanUri}`;
-
-
-
-
+            const href = `/blog${cleanUri}`;
 
             return (
               <motion.article
                 key={p.id}
                 variants={cardFade}
                 whileHover={{ y: -4 }}
-                className="card overflow-hidden h-full flex flex-col bg-white/95 backdrop-blur-sm border shadow-sm hover:shadow-lg transition-shadow"
+                className="card overflow-hidden h-full flex flex-col bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow"
               >
-                {/* image */}
+                {/* Image */}
                 {img && (
                   <Link href={href} className="block relative h-44 w-full overflow-hidden">
                     <motion.img
                       src={img}
                       alt={p.title}
-                      className="h-full w-full object-cover object-center"
+                      className="h-full w-full object-cover"
                       whileHover={{ scale: 1.04 }}
                       transition={{ duration: 0.35 }}
                     />
-                    {/* subtle fade for text contrast if ever needed */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
                   </Link>
                 )}
 
-                {/* content */}
+                {/* Content */}
                 <div className="p-6 flex-1 flex flex-col">
-                  {/* meta line */}
                   <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2">
                     <span>{date}</span>
                     {author && <span>· By {author}</span>}
                   </div>
 
-                  {/* categories (badges) */}
+                  {/* Categories */}
                   {cats.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {cats.slice(0, 3).map((c) => (
                         <span
                           key={c.slug}
-                          className="badge-calm"
+                          className="inline-flex px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700"
                         >
                           {c.name}
                         </span>
@@ -101,7 +89,7 @@ const href = `/blog${cleanUri}`;
                     </div>
                   )}
 
-                  {/* title */}
+                  {/* Title */}
                   <Link
                     href={href}
                     className="mt-3 font-semibold text-lg text-gray-900 line-clamp-2 hover:underline underline-offset-4"
@@ -109,7 +97,7 @@ const href = `/blog${cleanUri}`;
                     {p.title}
                   </Link>
 
-                  {/* excerpt */}
+                  {/* Excerpt */}
                   {p.excerpt && (
                     <div
                       className="prose prose-sm mt-3 text-muted line-clamp-3"
@@ -117,10 +105,9 @@ const href = `/blog${cleanUri}`;
                     />
                   )}
 
-                  {/* read more */}
                   <Link
                     href={href}
-                    className="mt-5 inline-flex items-center text-brand font-medium hover:underline underline-offset-4"
+                    className="mt-auto pt-4 inline-flex items-center text-brand font-medium hover:underline underline-offset-4"
                   >
                     Read more →
                   </Link>
@@ -130,13 +117,6 @@ const href = `/blog${cleanUri}`;
           })}
         </motion.div>
       </div>
-
-      {/* bottom wave transition */}
-      <img
-        src="/partners/hero-wave.svg"
-        aria-hidden="true"
-        className="absolute bottom-0 left-0 w-full opacity-60 pointer-events-none select-none"
-      />
     </motion.section>
   );
 }

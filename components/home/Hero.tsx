@@ -31,63 +31,47 @@ export default function Hero({
   const valid = images.filter((i) => !!i?.sourceUrl);
   const [index, setIndex] = useState(0);
 
-  // Auto-advance every 5s if multiple images
   useEffect(() => {
     if (valid.length <= 1) return;
-    const id = setInterval(
-      () => setIndex((i) => (i + 1) % valid.length),
-      5000
-    );
+    const id = setInterval(() => setIndex((i) => (i + 1) % valid.length), 5000);
     return () => clearInterval(id);
   }, [valid.length]);
 
   return (
     <section className="bg-white">
       <div className="container max-w-6xl mx-auto py-20 md:py-24 px-4">
-        <div className="relative overflow-hidden rounded-2xl shadow-md border bg-gray-50">
+        <div className="relative overflow-hidden rounded-2xl border bg-gray-50 shadow-sm">
 
-          {/* Floating soft blobs behind image */}
-          <div aria-hidden className="absolute inset-0 z-0">
-            <div className="hero-floating hero-blue" />
-            <div className="hero-floating hero-green" />
-            <div className="hero-floating hero-red" />
-          </div>
+          {/* ONE subtle blob only (calm) */}
+          <div
+            aria-hidden
+            className="absolute -top-16 -right-16 h-72 w-72 rounded-full bg-brand/10 blur-3xl z-0"
+          />
 
           {/* Slider Image Area */}
           {valid.length > 0 && (
             <div className="relative h-[300px] md:h-[520px] w-full z-10">
+
               <AnimatePresence mode="wait">
                 <motion.img
                   key={valid[index].sourceUrl || index}
                   src={valid[index].sourceUrl || ""}
                   alt={valid[index].altText || "Hero image"}
                   className="absolute inset-0 h-full w-full object-cover object-center"
-                  initial={{ opacity: 0, scale: 1.05 }}
+                  initial={{ opacity: 0, scale: 1.03 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.05 }}
-                  transition={{ duration: 1.1 }}
+                  exit={{ opacity: 0, scale: 1.03 }}
+                  transition={{ duration: 0.9 }}
                 />
               </AnimatePresence>
 
-              {/* Base dark overlay for readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
+              {/* Clean readability overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
 
-              {/* Aurora creative overlay */}
-              <motion.div
-                aria-hidden
-                className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6"
-                animate={{ opacity: [0.3, 0.55, 0.3], scale: [1, 1.05, 1] }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-
-              {/* Subtle dotted texture */}
+              {/* VERY subtle dotted texture (not loud) */}
               <div
                 aria-hidden
-                className="absolute inset-0 hero-dots mix-blend-soft-light"
+                className="absolute inset-0 opacity-[0.10] hero-dots"
               />
             </div>
           )}
@@ -98,7 +82,7 @@ export default function Hero({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pb-14 md:pb-20"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pb-16"
           >
             <h1 className="text-5xl md:text-7xl font-semibold text-white drop-shadow-lg max-w-4xl">
               {heading}
@@ -110,7 +94,7 @@ export default function Hero({
               </p>
             )}
 
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="mt-8 flex flex-wrap justify-center gap-4 relative z-40">
               {primaryText && primaryLink && (
                 <Link href={primaryLink} className="btn btn-primary">
                   {primaryText}
@@ -141,13 +125,12 @@ export default function Hero({
             </div>
           )}
 
-          {/* Bottom wave transition (behind content, shorter, pushed lower) */}
+          {/* Bottom wave stays, but subtle + behind content */}
           <img
             src="/partners/hero-wave.svg"
-            className="absolute bottom-0 left-0 w-full h-24 md:h-32 object-cover translate-y-6 md:translate-y-8 z-0 pointer-events-none select-none"
+            className="absolute bottom-0 left-0 w-full pointer-events-none select-none z-10 opacity-70"
             aria-hidden="true"
           />
-
         </div>
       </div>
     </section>

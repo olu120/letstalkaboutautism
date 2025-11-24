@@ -6,7 +6,7 @@ import { staggerGrid, cardFade, sectionFade } from "@/components/motion";
 type Card = {
   cardTitle: string;
   cardDescription?: string | null;
-  cardImage?: { sourceUrl?: string | null; altText?: string | null } | null; // ✅ allow null
+  cardImage?: { sourceUrl?: string | null; altText?: string | null } | null;
 };
 
 export default function Mission({ items = [] as Card[] }) {
@@ -16,9 +16,9 @@ export default function Mission({ items = [] as Card[] }) {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.25 }}
-      className="py-16 bg-white bg-soft-blobs"
+      className="py-16 bg-gray-50"   // ✅ Clean background matching other pages
     >
-      <div className="container">
+      <div className="container max-w-6xl mx-auto">
         <h2 className="text-3xl font-semibold mb-10 text-gray-900 text-center">
           Our Mission & Values
         </h2>
@@ -31,10 +31,10 @@ export default function Mission({ items = [] as Card[] }) {
             <motion.article
               key={t.cardTitle}
               variants={cardFade}
-              className="card p-6 text-left hover:shadow-md transition-shadow"
+              className="card p-6 text-left hover:shadow-md transition-shadow bg-white border rounded-xl"
             >
               {t.cardImage?.sourceUrl && (
-                <div className="mb-4 h-20 w-20 rounded-xl overflow-hidden border">
+                <div className="mb-4 h-20 w-20 rounded-xl overflow-hidden border bg-gray-100">
                   <img
                     src={t.cardImage.sourceUrl}
                     alt={t.cardImage.altText || t.cardTitle}
@@ -46,7 +46,9 @@ export default function Mission({ items = [] as Card[] }) {
               <h3 className="text-xl font-medium mb-2">{t.cardTitle}</h3>
 
               {t.cardDescription && (
-                <p className="text-muted">{t.cardDescription}</p>
+                <p className="text-muted leading-relaxed">
+                  {t.cardDescription}
+                </p>
               )}
             </motion.article>
           ))}
